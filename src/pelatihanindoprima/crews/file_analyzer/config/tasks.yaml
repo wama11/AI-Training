@@ -1,0 +1,7 @@
+task_file_analyzer:
+  description: >
+    Conduct a through extraxct of an existing {file} and make sure you identify every part of the report,
+    particulary related of sales figures.
+  expected_output: >
+    5 insightful about sales report analyzed document
+  agent: agent_file_analyzer

@@ -1,0 +1,26 @@
+research_task:
+  description: >
+    You are given the following market-related inputs related to the {topic}.
+
+    Produce a comprehensive market analysis covering:
+
+    1. Market size & growth – TAM, SAM, SOM, CAGR if available.
+    2. Competitive landscape – top 3–5 players, their market share, strengths/weaknesses.
+    3. Key trends – technology shifts, regulatory changes, consumer behavior.
+    4. Opportunities & threats (SWOT-style).
+    5. Data confidence – label each insight as high/medium/low confidence.
+
+    Output MUST be in Bahasa Indonesia.
+
+    Format your output as a structured Markdown report.
+
+  expected_output: >
+    A well-structured Markdown report with clear sections:
+    ## Market Size
+    ## Competition
+    ## Trends
+    ## Opportunities & Threats
+    ## Confidence Notes
+
+    Gunakan Bahasa Indonesia dan sertakan angka jika memungkinkan.
+  agent: researcher

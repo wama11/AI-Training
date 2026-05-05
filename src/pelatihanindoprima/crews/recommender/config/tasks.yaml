@@ -1,0 +1,32 @@
+recommendation_task:
+  description: >
+    Berdasarkan informasi berikut:
+
+    - Jenis motor: {motor_type}
+    - Kilometer: {km}
+    - Keluhan: {complaint}
+    - Gaya penggunaan: {usage}
+
+    Berikan rekomendasi servis motor yang mencakup:
+
+    1. Daftar servis yang direkomendasikan
+    2. Prioritas (High / Medium / Low)
+    3. Estimasi biaya (kisaran)
+    4. Risiko jika tidak dilakukan
+    5. Saran tambahan untuk perawatan
+
+    Gunakan Bahasa Indonesia dan format yang jelas.
+
+  expected_output: >
+    Rekomendasi servis motor dalam Bahasa Indonesia dengan format:
+
+    ## Rekomendasi Servis
+    - [Servis] - Prioritas - Estimasi biaya
+
+    ## Risiko
+    Penjelasan risiko jika tidak dilakukan
+
+    ## Saran Tambahan
+    Tips perawatan motor
+
+  agent: recommender
