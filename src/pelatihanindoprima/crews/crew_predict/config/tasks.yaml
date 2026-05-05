@@ -1,0 +1,7 @@
+predict_task:
+  description: >
+    Conduct a thorough research about {topic}
+    Make sure you find any predict and relevant information the time series data
+  expected_output: >
+    A time series about {topic}
+  agent: agent_predict

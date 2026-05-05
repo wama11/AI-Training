@@ -1,0 +1,7 @@
+task_anomali_detection:
+  description: >
+    You are responsible for analyzing the result of 'Tool deteksi anomali', if 'anomali' is greater than 'total_data' / 2 using {file} show reminder that
+    there is a problem
+  expected_output: >
+    JSON report of detected anomalies
+  agent: agent_anomaly_detection

@@ -4,19 +4,23 @@ import uuid
 from http import HTTPStatus
 from pydantic import BaseModel
 import tasks.celery_task as celeryTask
+
 from tasks.celery_app import celery_app
 from celery.result import AsyncResult
-from tasks.celery_task import research as research_task
-from tasks.celery_task import market as market_task
-from tasks.celery_task import recommendation as recommendation_task
-from tasks.celery_task import file_txt_analyzer as file_txt_analyzer
+# from tasks.celery_task import research as research_task
+# from tasks.celery_task import market as market_task
+# from tasks.celery_task import recommendation as recommendation_task
+# # from tasks.celery_task import file_txt_analyzer as file_txt
+# import tasks.celery_task as celeryTask
 
 
 from typing import Optional
 
 TEXT_FOLDER = "files_text"
+EXCEL_FOLDER = "files_excel"
 
 os.makedirs(TEXT_FOLDER, exist_ok=True)
+os.makedirs(EXCEL_FOLDER, exist_ok=True)
 
 class ResearchInput(BaseModel):
     topic : str
@@ -42,7 +46,7 @@ async def tes():
 
 @app.post("/research")
 async def research_endpoint(researchInput: ResearchInput):
-    task = research_task.delay(researchInput.topic)
+    task = celeryTask.research_task.delay(researchInput.topic)
 
     return {
         "task_id": task.id,
@@ -63,7 +67,7 @@ async def get_status(task_id: str):
 
 @app.post("/market")
 async def research_endpoint(researchInput: ResearchInput):
-    task = market_task.delay(researchInput.topic)
+    task = celeryTask.market.delay(researchInput.topic)
 
     return {
         "task_id": task.id,
@@ -115,3 +119,134 @@ async def txt_analyzer(file:UploadFile=File(...)):
         "task_id": task.id,
         "file_loc": file_loc
     }
+
+# deteksi_anomali_excel
+@app.post("/anomali_deteksi_tool")
+async def txt_analyzer(file:UploadFile=File(...)):
+    # if file.content_type != "text/plain":
+    #     raise HTTPException(status_code=400, detail ="title must be TXT")
+
+    # file_extension =os.path.splitext(file.filename)[1] or ".txt"
+
+      # validasi extension
+    allowed_extensions = [".xlsx", ".xls"]
+    file_extension = os.path.splitext(file.filename)[1].lower()
+
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail="File must be Excel (.xlsx or .xls)"
+        )
+
+    # optional: validasi content-type (tambahan keamanan)
+    allowed_content_types = [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
+        "application/vnd.ms-excel"  # .xls
+    ]
+
+    if file.content_type not in allowed_content_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid content type for Excel file"
+        )
+
+
+    unique_name = f"{uuid.uuid4().hex}{file_extension}"
+    file_loc = os.path.join(EXCEL_FOLDER, unique_name)
+
+    content = await file.read()
+    with open(file_loc, "wb") as f:
+        f.write(content)
+
+    task = celeryTask.deteksi_anomali_excel.delay(file_loc)
+
+    return {
+        "status": "processing",
+        "task_id": task.id,
+        "file_loc": file_loc
+    }
+
+@app.post("/excel-analyzer")
+async def excel_analyzer(file:UploadFile=File(...)):
+    allowed_extensions = [".xlsx", ".xls"]
+    file_extension = os.path.splitext(file.filename)[1].lower()
+
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail="File must be Excel (.xlsx or .xls)"
+        )
+
+    # optional: validasi content-type (tambahan keamanan)
+    allowed_content_types = [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
+        "application/vnd.ms-excel"  # .xls
+    ]
+
+    if file.content_type not in allowed_content_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid content type for Excel file"
+        )
+
+    unique_name = f"{uuid.uuid4().hex}{file_extension}"
+    file_loc = os.path.join(EXCEL_FOLDER, unique_name)
+
+    content = await file.read()
+    with open(file_loc, "wb") as f:
+        f.write(content)
+
+    task = celeryTask.file_excel_analyzer.delay(file_loc)
+
+    return {
+        "status": "processing",
+        "task_id": task.id,
+        "file_loc": file_loc
+    }
+
+
+@app.post("/predict_tool")
+async def txt_analyzer(file:UploadFile=File(...)):
+    # if file.content_type != "text/plain":
+    #     raise HTTPException(status_code=400, detail ="title must be TXT")
+
+    # file_extension =os.path.splitext(file.filename)[1] or ".txt"
+
+      # validasi extension
+    allowed_extensions = [".xlsx", ".xls"]
+    file_extension = os.path.splitext(file.filename)[1].lower()
+
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400,
+            detail="File must be Excel (.xlsx or .xls)"
+        )
+
+    # optional: validasi content-type (tambahan keamanan)
+    allowed_content_types = [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  # .xlsx
+        "application/vnd.ms-excel"  # .xls
+    ]
+
+    if file.content_type not in allowed_content_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid content type for Excel file"
+        )
+
+
+    unique_name = f"{uuid.uuid4().hex}{file_extension}"
+    file_loc = os.path.join(EXCEL_FOLDER, unique_name)
+
+    content = await file.read()
+    with open(file_loc, "wb") as f:
+        f.write(content)
+
+    task = celeryTask.predict_excel.delay(file_loc)
+
+    return {
+        "status": "processing",
+        "task_id": task.id,
+        "file_loc": file_loc
+    }
+

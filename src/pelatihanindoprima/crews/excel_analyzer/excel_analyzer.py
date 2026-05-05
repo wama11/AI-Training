@@ -10,15 +10,12 @@ from typing import List
 # https://docs.crewai.com/concepts/crews#example-crew-class-with-decorators
 
 @CrewBase
-class FileAnalyzer():
-    """FileAnalyzer crew"""
+class ExcelAnalyzer():
+    """ExcelAnalyzer crew"""
 
     agents: list[BaseAgent]
     tasks: list[Task]
 
-    # Learn more about YAML configuration files here:
-    # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
-    # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
     agents_config = "config/agents.yaml"
     tasks_config = "config/tasks.yaml"
 
@@ -28,12 +25,16 @@ class FileAnalyzer():
         insight:str
         indicator:str
 
+    # Learn more about YAML configuration files here:
+    # Agents: https://docs.crewai.com/concepts/agents#yaml-configuration-recommended
+    # Tasks: https://docs.crewai.com/concepts/tasks#yaml-configuration-recommended
+
     # If you would like to add tools to your agents, you can learn more about it here:
     # https://docs.crewai.com/concepts/agents#agent-tools
     @agent
-    def agent_file_analyzer(self) -> Agent:
+    def agents_analyzer_excel(self) -> Agent:
         return Agent(
-            config=self.agents_config['agent_file_analyzer'], # type: ignore[index]
+            config=self.agents_config['agents_analyzer_excel'], # type: ignore[index]
             verbose=True,
             tools = [self.fileReadTool]
         )
@@ -41,21 +42,22 @@ class FileAnalyzer():
     class Output_txt_analyzer_schema(BaseModel):
         analyzer : list["Output_txt_analyzer"] = Field(..., min_length=5)
 
+
+
     # To learn more about structured task outputs,
     # task dependencies, and task callbacks, check out the documentation:
     # https://docs.crewai.com/concepts/tasks#overview-of-a-task
-    @task
-    def task_agent_analyzer(self) -> Task:
-        return Task(
-            config=self.tasks_config['task_file_analyzer'], # type: ignore[index]
 
+    @task
+    def task_excel_analyzer(self) -> Task:
+        return Task(
+            config=self.tasks_config['task_excel_analyzer'], # type: ignore[index]
             output_json = self.Output_txt_analyzer
         )
 
-
     @crew
     def crew(self) -> Crew:
-        """Creates the FileAnalyzer crew"""
+        """Creates the ExcelAnalyzer crew"""
         # To learn how to add knowledge sources to your crew, check out the documentation:
         # https://docs.crewai.com/concepts/knowledge#what-is-knowledge
 
