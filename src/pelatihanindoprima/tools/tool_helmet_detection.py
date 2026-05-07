@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Dict, Any
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +22,7 @@ class Tool_helmet_detection(BaseTool):
 
     modelYolo: YOLO = YOLO("src/pelatihanindoprima/tools/model_yolo.pt")
 
-    def _run(self, image: str) -> str:
+    def _run(self, image: str) -> Dict[str, Any]:
         result = self.modelYolo(image)
         detected_objects = result[0].boxes.cls.tolist()
         class_names = result[0].names

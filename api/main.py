@@ -7,13 +7,10 @@ import tasks.celery_task as celeryTask
 
 from tasks.celery_app import celery_app
 from celery.result import AsyncResult
-# from tasks.celery_task import research as research_task
-# from tasks.celery_task import market as market_task
-# from tasks.celery_task import recommendation as recommendation_task
-# # from tasks.celery_task import file_txt_analyzer as file_txt
-# import tasks.celery_task as celeryTask
-
-
+from telegram import Update, Bot
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+from contextlib import asynccontextmanager
+from http import HTTPStatus
 from typing import Optional
 
 TEXT_FOLDER = "files_text"
@@ -23,6 +20,30 @@ IMAGE_FOLDER = "files_image"
 os.makedirs(TEXT_FOLDER, exist_ok=True)
 os.makedirs(EXCEL_FOLDER, exist_ok=True)
 os.makedirs(IMAGE_FOLDER, exist_ok=True)
+
+TOKEN = "8065516745:AAEPBJ9DOATCvQ4o--SJ0GlGBySyTry7u6I"
+WEBHOOK_URL = os.getenv("WEBHOOK_URL","https://marsh-delight-proceedings-guardian.trycloudflare.com/webhook")
+
+ptb =(
+    Application.builder()
+    .updater(None)
+    .token(TOKEN)
+    .read_timeout(7)
+    .get_updates_read_timeout(42)
+    .build()
+)
+
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+    """
+    lifecycle manager for PTB
+    """
+    await ptb.bot.set_webhook(WEBHOOK_URL)
+    async with ptb:
+        await ptb.start()
+        yield
+    await ptb.stop()
+
 
 class ResearchInput(BaseModel):
     topic : str
@@ -40,11 +61,100 @@ class RecommendationInput(BaseModel):
 
 
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
+
+
+@app.post("/webhook")
+async def telegram_webhook(request:Request):
+    """
+    The endpoint telegram will send update
+    """
+    req_json = await request.json()
+    update = Update.de_json(req_json, ptb.bot)
+
+    await ptb.process_update(update)
+    return Response(status_code = HTTPStatus.OK)
+
+async def start_command(update:Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    handler untuk command /start
+    """
+    await update.message.reply_text("startting ... bot nyala")
+
+async def image_handler(update:Update, context:ContextTypes.DEFAULT_TYPE):
+    photo_size = update.message.photo[-1]
+    file_id = photo_size.file_id
+    file_unique_id = photo_size.file_unique_id
+    width = photo_size.width
+    height = photo_size.height
+    file_size = photo_size.file_size
+
+
+    reply_text =(
+        f"<b>Received Image Data</b>"
+        f"Dimension : {width}x{height}px\n"
+        f"File Size : {round(file_size/1024,2)}KB\n"
+        f"<code>file_id</code>: <code> {file_id}</code>\n"
+        f"<code>file_unique_id</code>: <code>{file_unique_id}</code>"
+
+    )
+    await update.message.reply_text(reply_text,parse_mode="HTML")
+
+
+async def bot_reserach(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text(
+            "Pesan salah, gunakan perintah:\n /research ['topic']", parse_mode="MarkdownV2"
+        )
+        return
+
+        # await update.message.reply_text("Please provide a topic for research. Usage: /research <topic>")
+        # return
+
+    input_data = ResearchInput(topic=context.args[0])
+    task = celeryTask.research.delay(input_data.topic)
+    # await update.message.chat.send_action(action="typing")
+    # await update.message.reply_text(f"task_id: /{task_id}")
+
+    await update.message.reply_text(
+        f"Research task has been queued with topic: {input_data.topic}\n"
+        f"Task ID: {task.id}"
+    )
+
+async def bot_status(update:Update,context:ContextTypes.DEFAULT_TYPE):
+    if not context.args:
+        await update.message.reply_text(
+            "Pesan salah, gunakan perintah:\n /status ['task_id']", parse_mode="MarkdownV2"
+        )
+        return
+
+    task_result = AsyncResult(context.args[0], app=celery_app)
+    response = {
+        "task_id": context.args[0],
+        "status": task_result.state,
+        "result": str(task_result.result) if task_result.status == 'SUCCESS' else None,
+        "error" : None
+    }
+
+    if task_result.state == 'SUCCESS':
+       response['result'] = task_result.result
+
+    elif task_result.state == 'FAILURE' :
+        response['error'] = str(task_result.info)
+
+    await update.message.chat.send_action(action='typing')
+
+
+
+
+ptb.add_handler(CommandHandler("start", start_command))
+ptb.add_handler(MessageHandler(filters.PHOTO, image_handler))
+ptb.add_handler(CommandHandler("research",bot_reserach))
+ptb.add_handler(CommandHandler("status",bot_status))
+
 @app.post("/tes")
 async def tes():
     return {"message":"hello world!"}
-
 
 @app.post("/research")
 async def research_endpoint(researchInput: ResearchInput):
