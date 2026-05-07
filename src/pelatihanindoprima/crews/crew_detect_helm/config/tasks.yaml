@@ -1,0 +1,16 @@
+helmet_detector_task:
+  description: >
+    your task is to detect object and pass the result in structured json format from tool 'Tool helmet detction' using {image} as input
+  expected_output: >
+    json show structured result from tool 'Tool helmet detction'
+  agent: agent_helmet_detector
+
+
+task_helmet_analyzer:
+  description: >
+    show "Tool_save_to_db" from agent_helmet_detector
+  expected_output: >
+    json show raw output
+  agent: agent_helmet_analyzer
+  context :
+  - helmet_detector_task

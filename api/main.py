@@ -18,9 +18,11 @@ from typing import Optional
 
 TEXT_FOLDER = "files_text"
 EXCEL_FOLDER = "files_excel"
+IMAGE_FOLDER = "files_image"
 
 os.makedirs(TEXT_FOLDER, exist_ok=True)
 os.makedirs(EXCEL_FOLDER, exist_ok=True)
+os.makedirs(IMAGE_FOLDER, exist_ok=True)
 
 class ResearchInput(BaseModel):
     topic : str
@@ -250,3 +252,25 @@ async def txt_analyzer(file:UploadFile=File(...)):
         "file_loc": file_loc
     }
 
+@app.post("/deteksi_helm")
+async def deteksi_helm(file:UploadFile=File(...)):
+
+    if file.content_type != "image/jpeg":
+        raise HTTPException(status_code=400, detail ="file must be an image")
+
+    file_extension =os.path.splitext(file.filename)[1] or ".jpg"
+
+    unique_name = f"{uuid.uuid4().hex}{file_extension}"
+    file_loc = os.path.join(IMAGE_FOLDER, unique_name)
+
+    content = await file.read()
+    with open(file_loc, "wb") as f:
+        f.write(content)
+
+    task = celeryTask.detect_helm.delay(file_loc)
+
+    return {
+        "task_id": task.id,
+        "file_path":file_loc,
+        "status": "queued"
+    }

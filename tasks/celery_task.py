@@ -7,6 +7,7 @@ from src.pelatihanindoprima.crews.excel_analyzer.excel_analyzer import ExcelAnal
 # from src.pelatihanindoprima.crews.crew_anomali.crew_anomali import Tool_anomali
 from src.pelatihanindoprima.crews.crew_anomali.crew_anomali import CrewAnomali
 from src.pelatihanindoprima.crews.crew_predict.crew_predict import CrewPredict
+from src.pelatihanindoprima.crews.crew_detect_helm.crew_detect_helm import CrewDetectHelm
 import logging
 import traceback
 
@@ -124,4 +125,39 @@ def predict_excel(self, file:str):
         return str(result)
     except Exception as e:
         logger.error(f'Task failed with error: {e}\n{traceback.format_exc()}')
+        raise
+
+
+# @celery_app.task(bind=True, name ="detect-helm")
+# def detect_helm(self, image:str):
+#     self.update_state(state ="RUNNING",meta={'current':f'start job for:{image}'}
+#     )
+
+#     try:
+#         result = CrewDetectHelm().crew().kickoff(inputs={
+#             "image": image
+#         })
+#         return str(result)
+#     except Exception as e:
+#         logger.error(f'Task failed with error: {e}\n{traceback.format_exc()}')
+#         raise
+
+@celery_app.task(bind=True, name="detect-helm")
+def detect_helm(self, image: str):
+    self.update_state(
+        state="RUNNING",
+        meta={"current": f"start job for: {image}"}
+    )
+
+    try:
+        result = CrewDetectHelm().crew().kickoff(inputs={
+            "image": image
+        })
+
+        return str(result)
+
+    except Exception as e:
+        logger.error(
+            f"Task failed with error: {e}\n{traceback.format_exc()}"
+        )
         raise
